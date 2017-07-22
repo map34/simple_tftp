@@ -1,4 +1,4 @@
-package: bitbucket.org/adrian_prananda/simple_tftp
+package: github.com/map34/simple_tftp
 import:
 - package: github.com/sirupsen/logrus
   version: ~1.0.2

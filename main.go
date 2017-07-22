@@ -1,6 +1,6 @@
 package main
 
-import "bitbucket.org/adrian_prananda/simple_tftp/tftputils"
+import "github.com/map34/simple_tftp/tftputils"
 
 func main() {
 	err := tftputils.SpawnServeSession()
