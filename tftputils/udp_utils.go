@@ -53,6 +53,9 @@ func NewUDPUtils(initAddr string, remoteAddr string) (*UDPUtils, error) {
 	}, nil
 }
 
+func (udp *UDPUtils) LocalAddress() string {
+	return udp.connection.LocalAddr().String()
+}
 func (udp *UDPUtils) CloseConnection() {
 	udp.connection.Close()
 }

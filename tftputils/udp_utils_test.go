@@ -8,10 +8,10 @@ import (
 
 func TestUDPReadWrite(t *testing.T) {
 	message := "hello"
-	port := ":3000"
 
+	portChan := make(chan string)
 	go func() {
-		conn, err := NewUDPUtils("", port)
+		conn, err := NewUDPUtils("", <-portChan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -22,10 +22,11 @@ func TestUDPReadWrite(t *testing.T) {
 		}
 	}()
 
-	readUDPUtils, err := NewUDPUtils(port, "")
+	readUDPUtils, err := NewUDPUtils("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	portChan <- readUDPUtils.LocalAddress()
 	defer readUDPUtils.CloseConnection()
 	for {
 		readMessage, addr, err := readUDPUtils.ReadFromConn()

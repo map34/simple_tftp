@@ -49,13 +49,13 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 
 	switch opCode {
 	case WRQ:
-		err := s.startSession(packet, addr, SpawnWriteSession)
+		err := s.StartSession(packet, addr, SpawnWriteSession)
 		if err != nil {
 			return false, err
 		}
 		return true, nil
 	case RRQ:
-		err := s.startSession(packet, addr, SpawnReadSession)
+		err := s.StartSession(packet, addr, SpawnReadSession)
 		if err != nil {
 			return false, err
 		}
@@ -71,7 +71,7 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 	}
 }
 
-func (s *ServeSession) startSession(
+func (s *ServeSession) StartSession(
 	packet []byte,
 	addr *net.UDPAddr,
 	funcSig SpawnerFunction) error {

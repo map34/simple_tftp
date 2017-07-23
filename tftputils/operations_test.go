@@ -8,10 +8,9 @@ import (
 )
 
 func TestSendAck(t *testing.T) {
-	port := ":3000"
-
+	portChan := make(chan string)
 	go func() {
-		udpUtils, err := NewUDPUtils("", port)
+		udpUtils, err := NewUDPUtils("", <-portChan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -22,10 +21,11 @@ func TestSendAck(t *testing.T) {
 		}
 	}()
 
-	readUDPUtils, err := NewUDPUtils(port, "")
+	readUDPUtils, err := NewUDPUtils("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	portChan <- readUDPUtils.LocalAddress()
 	defer readUDPUtils.CloseConnection()
 	for {
 		readMessage, addr, err := readUDPUtils.ReadFromConn()
@@ -39,10 +39,10 @@ func TestSendAck(t *testing.T) {
 }
 
 func TestSendError(t *testing.T) {
-	port := ":3000"
+	portChan := make(chan string)
 	message := "hi"
 	go func() {
-		udpUtils, err := NewUDPUtils("", port)
+		udpUtils, err := NewUDPUtils("", <-portChan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,10 +53,11 @@ func TestSendError(t *testing.T) {
 		}
 	}()
 
-	readUDPUtils, err := NewUDPUtils(port, "")
+	readUDPUtils, err := NewUDPUtils("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	portChan <- readUDPUtils.LocalAddress()
 	defer readUDPUtils.CloseConnection()
 	for {
 		readMessage, addr, err := readUDPUtils.ReadFromConn()
@@ -70,10 +71,10 @@ func TestSendError(t *testing.T) {
 }
 
 func TestDataPacket(t *testing.T) {
-	port := ":3000"
 	message := "hi"
+	portChan := make(chan string)
 	go func() {
-		udpUtils, err := NewUDPUtils("", port)
+		udpUtils, err := NewUDPUtils("", <-portChan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -84,10 +85,11 @@ func TestDataPacket(t *testing.T) {
 		}
 	}()
 
-	readUDPUtils, err := NewUDPUtils(port, "")
+	readUDPUtils, err := NewUDPUtils("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	portChan <- readUDPUtils.LocalAddress()
 	defer readUDPUtils.CloseConnection()
 	for {
 		readMessage, addr, err := readUDPUtils.ReadFromConn()
