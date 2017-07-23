@@ -43,7 +43,7 @@ func NewUDPUtils(remoteAddr *net.UDPAddr) (*UDPUtils, error) {
 		addr:       localAddr,
 		remoteAddr: remoteAddr,
 		connection: connection,
-		data:       make([]byte, 512),
+		data:       make([]byte, 1024),
 	}, nil
 }
 

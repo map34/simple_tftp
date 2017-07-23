@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 )
 
 func uint64ToBytes(num uint64) []byte {
@@ -21,11 +23,20 @@ func bytesToUint64(bytes []byte) (uint64, error) {
 	return binary.BigEndian.Uint64(completeBytes), nil
 }
 
-func validateMode(mode string) (bool, error) {
+func validateMode(mode string) bool {
 	switch mode {
 	case OCTET:
-		return true, nil
+		return true
 	default:
-		return false, fmt.Errorf("mode %v is not supported", mode)
+		return false
 	}
+}
+
+func validateModeAndNotify(mode string, udpUtils *UDPUtils) (bool, error) {
+	if !validateMode(mode) {
+		msg := fmt.Sprintf("Mode %v not supported", mode)
+		logrus.Error(msg)
+		return false, sendErrorPacket(UnknownTransferIDErr, msg, udpUtils)
+	}
+	return true, nil
 }

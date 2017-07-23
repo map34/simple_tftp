@@ -7,7 +7,7 @@ type DataPacket struct {
 }
 
 type ErrorPacket struct {
-	code        uint16
+	code        uint8
 	message     string
 	packetBytes []byte
 }
@@ -22,30 +22,43 @@ type RequestInfo struct {
 	mode     string
 }
 
-func NewAckPacket(block [2]byte) (*AckPacket, error) {
-	blockInt, err := bytesToUint64(block[:])
-	if err != nil {
-		return nil, err
-	}
-	packet := []byte{0x0, 0x4, block[0], block[1]}
+func NewAckPacket(block uint16) *AckPacket {
+	blockBytes := uint64ToBytes(uint64(block))
+
+	packet := []byte{0x0, 0x4,
+		blockBytes[len(blockBytes)-2], blockBytes[len(blockBytes)-1]}
 	return &AckPacket{
-		block:       uint16(blockInt),
+		block:       block,
 		packetBytes: packet,
-	}, nil
+	}
 }
 
-func NewDataPacket(block [2]byte, data []byte) (*DataPacket, error) {
-	blockInt, err := bytesToUint64(block[:])
-	if err != nil {
-		return nil, err
-	}
-	headerPacket := []byte{0x0, 0x3, block[0], block[1]}
+func NewDataPacket(block uint16, data []byte) *DataPacket {
+	blockBytes := uint64ToBytes(uint64(block))
+	headerPacket := []byte{0x0, 0x3,
+		blockBytes[len(blockBytes)-2], blockBytes[len(blockBytes)-1]}
 	packet := append(headerPacket, data...)
 	return &DataPacket{
-		block:       uint16(blockInt),
+		block:       block,
 		data:        data,
 		packetBytes: packet,
-	}, nil
+	}
+}
+
+func NewErrorPacket(errCode uint8, errMessage string) *ErrorPacket {
+	errCodeBytes := uint64ToBytes(uint64(errCode))
+	messageBytes := []byte(errMessage)
+
+	packet := []byte{0x0, 0x5,
+		errCodeBytes[len(errCodeBytes)-2], errCodeBytes[len(errCodeBytes)-1]}
+	packet = append(packet, messageBytes...)
+	packet = append(packet, []byte{0}...)
+
+	return &ErrorPacket{
+		code:        errCode,
+		message:     errMessage,
+		packetBytes: packet,
+	}
 }
 
 func NewRequestInfo(packetBytes []byte) (*RequestInfo, error) {

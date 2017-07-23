@@ -1,23 +1,15 @@
 package tftputils
 
-import (
-	"errors"
-
-	"github.com/sirupsen/logrus"
-)
+import "errors"
 
 func sendAckPacket(blockLoc uint16, udpUtils *UDPUtils) error {
-	blockBytes := uint64ToBytes(uint64(blockLoc))
-	packet, err := NewAckPacket([2]byte{
-		blockBytes[len(blockBytes)-2],
-		blockBytes[len(blockBytes)-1]})
-
-	logrus.Infof("Sending ACK Block: %v", blockLoc)
-
-	if err != nil {
-		return err
-	}
+	packet := NewAckPacket(blockLoc)
 	return udpUtils.WriteToConn(packet.packetBytes)
+}
+
+func sendErrorPacket(errCode uint8, errMessage string, udpUtils *UDPUtils) error {
+	errorPacket := NewErrorPacket(errCode, errMessage)
+	return udpUtils.WriteToConn(errorPacket.packetBytes)
 }
 
 //  2 bytes     string    1 byte     string   1 byte

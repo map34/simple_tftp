@@ -3,8 +3,6 @@ package tftputils
 import (
 	"fmt"
 	"net"
-
-	"github.com/sirupsen/logrus"
 )
 
 type ServeSession struct {
@@ -54,6 +52,10 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 		}
 		return true, nil
 	case RRQ:
+		err := s.startReadSession(packet, addr)
+		if err != nil {
+			return false, err
+		}
 		return true, nil
 	default:
 		return false, fmt.Errorf("S: Opcode unknown or currently unsupported: %v", opCode)
@@ -65,14 +67,15 @@ func (s *ServeSession) startWriteSession(packet []byte, addr *net.UDPAddr) error
 	if err != nil {
 		return err
 	}
+	go SpawnWriteSession(s.fileStorage, reqInfo, addr)
+	return nil
+}
 
-	ok, err := validateMode(reqInfo.mode)
-	if !ok && err != nil {
+func (s *ServeSession) startReadSession(packet []byte, addr *net.UDPAddr) error {
+	reqInfo, err := NewRequestInfo(packet)
+	if err != nil {
 		return err
 	}
-
-	logrus.Info("S: Starting a writing session for %v in %v mode",
-		reqInfo.filename, reqInfo.mode)
-	go SpawnWriteSession(s.fileStorage, reqInfo, addr)
+	go SpawnReadSession(s.fileStorage, reqInfo, addr)
 	return nil
 }

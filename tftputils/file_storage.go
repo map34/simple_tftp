@@ -1,7 +1,7 @@
 package tftputils
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -34,18 +34,22 @@ func (fs *FileStore) Put(file *FileObject) error {
 	defer fs.mutex.Unlock()
 	fs.mutex.Lock()
 
-	_, ok := fs.fileMap[file.filename]
-	if ok {
-		return errors.New("File already exists")
+	if fs.DoesFileExist(file.filename) {
+		return fmt.Errorf("%v exists", file.filename)
 	}
 	fs.fileMap[file.filename] = file
 	return nil
 }
 
 func (fs *FileStore) Get(filename string) (*FileObject, error) {
-	file := fs.fileMap[filename]
-	if file == nil {
-		return file, errors.New("File does not exist")
+	if !fs.DoesFileExist(filename) {
+		return nil, fmt.Errorf("%v does not exist", filename)
 	}
+	file := fs.fileMap[filename]
 	return file, nil
+}
+
+func (fs *FileStore) DoesFileExist(filename string) bool {
+	_, ok := fs.fileMap[filename]
+	return ok
 }

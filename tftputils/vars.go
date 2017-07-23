@@ -7,12 +7,23 @@ package tftputils
 // 	4     Acknowledgment (ACK)
 // 	5     Error (ERROR)
 const (
-	UNKNOWNOP = 0
-	RRQ       = 1
-	WRQ       = 2
-	DATA      = 3
-	ACK       = 4
-	ERROR     = 5
+	UNKNOWNOP = iota
+	RRQ
+	WRQ
+	DATA
+	ACK
+	ERROR
+)
+
+const (
+	UnknownErr = iota
+	FileNotFoundErr
+	AccessViolationErr
+	DiskFullErr
+	IllegalOpErr
+	UnknownTransferIDErr
+	FileExistsErr
+	NoSuchUserErr
 )
 
 const (

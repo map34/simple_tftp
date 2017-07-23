@@ -1,6 +1,7 @@
 package tftputils
 
 import (
+	"errors"
 	"fmt"
 	"net"
 
@@ -20,6 +21,15 @@ func NewWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDP
 	if err != nil {
 		return nil, err
 	}
+
+	ok, err := validateWriteRequest(fileS, reqInfo, udpUtils)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errors.New("Cannot continue protocol")
+	}
 	return &WriteSession{
 		udpUtils:    udpUtils,
 		fileStorage: fileS,
@@ -34,24 +44,38 @@ func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.U
 	if err != nil {
 		return err
 	}
+
+	logrus.Infof("W: Starting a writing session for %v in %v mode",
+		reqInfo.filename, reqInfo.mode)
+
 	sendAckPacket(writer.blockLoc, writer.udpUtils)
 	for {
-		data, addr, err := writer.udpUtils.ReadFromConn()
+		data, _, err := writer.udpUtils.ReadFromConn()
 		if err != nil {
 			return err
 		}
-		done, err := writer.ResolvePackets(data, addr)
+		done, err := writer.ResolvePackets(data)
 		if err != nil {
 			return err
 		}
 		if done {
-			logrus.Infof("W: Done getting data from file")
-			return writer.storeFile()
+			err := writer.storeFile()
+			logrus.Infof("W: Done transferring data from %v to server", reqInfo.filename)
+			return err
 		}
 	}
 }
 
-func (ws *WriteSession) ResolvePackets(packet []byte, addr *net.UDPAddr) (bool, error) {
+func validateWriteRequest(fileS *FileStore, reqInfo *RequestInfo, udpUtils *UDPUtils) (bool, error) {
+	if fileS.DoesFileExist(reqInfo.filename) {
+		msg := fmt.Sprintf("W: File %v exists in the server", reqInfo.filename)
+		logrus.Error(msg)
+		return false, sendErrorPacket(FileExistsErr, msg, udpUtils)
+	}
+	return validateModeAndNotify(reqInfo.mode, udpUtils)
+}
+
+func (ws *WriteSession) ResolvePackets(packet []byte) (bool, error) {
 	opCode, err := getOpCode(packet)
 	if err != nil {
 		return false, err
@@ -60,8 +84,6 @@ func (ws *WriteSession) ResolvePackets(packet []byte, addr *net.UDPAddr) (bool, 
 	switch opCode {
 	case DATA:
 		return ws.handleData(packet)
-	case ERROR:
-		return true, nil
 	default:
 		return false, fmt.Errorf("W: Opcode unknown or currently unsupported: %v", opCode)
 	}
