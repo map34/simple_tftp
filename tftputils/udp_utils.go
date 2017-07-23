@@ -14,17 +14,23 @@ type UDPUtils struct {
 	remoteAddr *net.UDPAddr
 }
 
-func NewUDPUtils(remoteAddr *net.UDPAddr) (*UDPUtils, error) {
-	localAddr, err := net.ResolveUDPAddr("udp", ":0")
+func NewUDPUtils(initAddr string, remoteAddr string) (*UDPUtils, error) {
+	if initAddr == "" {
+		initAddr = ":0"
+	}
+
+	localAddr, err := net.ResolveUDPAddr("udp", initAddr)
 	if err != nil {
 		logrus.Errorf("Cannot resolve UDP address: %v", err)
 		return nil, err
 	}
 
 	var connection *net.UDPConn
+	var remoteUDPAddr *net.UDPAddr
 
-	if remoteAddr != nil {
-		connection, err = net.DialUDP("udp", localAddr, remoteAddr)
+	if remoteAddr != "" {
+		remoteUDPAddr, err := net.ResolveUDPAddr("udp", remoteAddr)
+		connection, err = net.DialUDP("udp", localAddr, remoteUDPAddr)
 		if err != nil {
 			logrus.Errorf("Cannot dial to UDP: %v", err)
 			return nil, err
@@ -41,10 +47,14 @@ func NewUDPUtils(remoteAddr *net.UDPAddr) (*UDPUtils, error) {
 
 	return &UDPUtils{
 		addr:       localAddr,
-		remoteAddr: remoteAddr,
+		remoteAddr: remoteUDPAddr,
 		connection: connection,
 		data:       make([]byte, 1024),
 	}, nil
+}
+
+func (udp *UDPUtils) CloseConnection() {
+	udp.connection.Close()
 }
 
 func (udp *UDPUtils) WriteToConn(data []byte) error {

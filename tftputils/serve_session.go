@@ -15,6 +15,7 @@ func SpawnServeSession() error {
 	if err != nil {
 		return err
 	}
+	defer server.udpUtils.CloseConnection()
 	for {
 		data, addr, err := server.udpUtils.ReadFromConn()
 		if err != nil {
@@ -28,7 +29,7 @@ func SpawnServeSession() error {
 }
 
 func NewServeSession() (*ServeSession, error) {
-	udpUtils, err := NewUDPUtils(nil)
+	udpUtils, err := NewUDPUtils("", "")
 	if err != nil {
 		return nil, err
 	}

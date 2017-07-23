@@ -17,7 +17,7 @@ type WriteSession struct {
 }
 
 func NewWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPAddr) (*WriteSession, error) {
-	udpUtils, err := NewUDPUtils(remoteAddr)
+	udpUtils, err := NewUDPUtils("", remoteAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +44,7 @@ func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.U
 	if err != nil {
 		return err
 	}
+	defer writer.udpUtils.CloseConnection()
 
 	logrus.Infof("W: Starting a writing session for %v in %v mode",
 		reqInfo.filename, reqInfo.mode)

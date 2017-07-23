@@ -1,7 +1,7 @@
 package tftputils
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,30 +14,28 @@ func writeAFile() (*FileObject, *FileStore, error) {
 	return file, fileStorage, err
 }
 
-func TestPut(t *testing.T) {
-	_, _, err := writeAFile()
+func TestPutGet(t *testing.T) {
+	file, fileStorage, err := writeAFile()
 	assert.Nil(t, err)
+	actualFile, err := fileStorage.Get(file.filename)
+	assert.Nil(t, err)
+	assert.Equal(t, file, actualFile)
 }
-
 func TestPutExists(t *testing.T) {
-	file, fileStorage, _ := writeAFile()
-	err := fileStorage.Put(file)
+	file, fileStorage, err := writeAFile()
+	assert.Nil(t, err)
+	err = fileStorage.Put(file)
 	if assert.NotNil(t, err) {
-		assert.Equal(t, errors.New("File already exists"), err)
+		assert.Equal(t, fmt.Errorf("%v exists", file.filename), err)
 	}
 }
 
-func TestGet(t *testing.T) {
-	file, fileStorage, _ := writeAFile()
-	actualFile, _ := fileStorage.Get(file.filename)
-	assert.Equal(t, file, actualFile)
-}
-
 func TestGetNonExistant(t *testing.T) {
+	filename := "somefile"
 	fileStorage := NewFileStore()
-	actualFile, err := fileStorage.Get("some_file")
+	actualFile, err := fileStorage.Get(filename)
 	assert.Nil(t, actualFile)
 	if assert.NotNil(t, err) {
-		assert.Equal(t, errors.New("File does not exist"), err)
+		assert.Equal(t, fmt.Errorf("%v does not exist", filename), err)
 	}
 }

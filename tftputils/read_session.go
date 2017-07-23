@@ -16,7 +16,7 @@ type ReadSession struct {
 }
 
 func NewReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPAddr) (*ReadSession, error) {
-	udpUtils, err := NewUDPUtils(remoteAddr)
+	udpUtils, err := NewUDPUtils("", remoteAddr.String())
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +46,9 @@ func SpawnReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UD
 	if err != nil {
 		return err
 	}
+
+	defer reader.udpUtils.CloseConnection()
+
 	logrus.Infof("R: Starting a reading session for %v in %v mode",
 		reqInfo.filename, reqInfo.mode)
 
@@ -61,7 +64,7 @@ func SpawnReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UD
 			return err
 		}
 		if done {
-			logrus.Infof("W: Done transferring data from server to %v", reqInfo.filename)
+			logrus.Infof("R: Done transferring data from server to %v", reqInfo.filename)
 			return nil
 		}
 	}
