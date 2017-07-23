@@ -9,16 +9,16 @@ import (
 )
 
 func uint64ToBytes(num uint64) []byte {
-	bytes := make([]byte, UINT64BYTESNUM)
+	bytes := make([]byte, Uint64BytesNum)
 	binary.BigEndian.PutUint64(bytes, num)
 	return bytes
 }
 
 func bytesToUint64(bytes []byte) (uint64, error) {
-	if len(bytes) > UINT64BYTESNUM {
+	if len(bytes) > Uint64BytesNum {
 		return 0, errors.New("Bytes length is too long for Uint64")
 	}
-	pad := make([]byte, UINT64BYTESNUM-len(bytes))
+	pad := make([]byte, Uint64BytesNum-len(bytes))
 	completeBytes := append(pad, bytes...)
 	return binary.BigEndian.Uint64(completeBytes), nil
 }

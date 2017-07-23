@@ -113,8 +113,8 @@ func (rs *ReadSession) handleAck(packet []byte) (bool, error) {
 }
 
 func (rs *ReadSession) sendData() (bool, error) {
-	nextBlock := rs.blockLoc * SMALLESTBLOCK
-	prevBlock := (rs.blockLoc - 1) * SMALLESTBLOCK
+	nextBlock := rs.blockLoc * SmallestBlockSize
+	prevBlock := (rs.blockLoc - 1) * SmallestBlockSize
 	dataLen := uint16(len(rs.file.data))
 
 	if prevBlock > dataLen {

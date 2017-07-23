@@ -122,7 +122,7 @@ func (ws *WriteSession) handleData(packet []byte) (bool, error) {
 		return false, err
 	}
 
-	if len(packet) < SMALLESTBLOCK {
+	if len(packet) < SmallestBlockSize {
 		return true, nil
 	}
 	return false, nil

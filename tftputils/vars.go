@@ -27,8 +27,8 @@ const (
 )
 
 const (
-	SMALLESTBLOCK  = 512
-	UINT64BYTESNUM = 8
+	SmallestBlockSize = 512
+	Uint64BytesNum  = 8
 )
 
 const (
