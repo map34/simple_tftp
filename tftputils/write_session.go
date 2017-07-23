@@ -41,6 +41,7 @@ func NewWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDP
 
 func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPAddr) error {
 	writer, err := NewWriteSession(fileS, reqInfo, remoteAddr)
+
 	if err != nil {
 		return err
 	}
@@ -85,6 +86,12 @@ func (ws *WriteSession) ResolvePackets(packet []byte) (bool, error) {
 	switch opCode {
 	case DATA:
 		return ws.handleData(packet)
+	case ERROR:
+		err := handleError(packet)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
 	default:
 		return false, fmt.Errorf("W: Opcode unknown or currently unsupported: %v", opCode)
 	}

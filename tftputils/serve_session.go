@@ -5,6 +5,8 @@ import (
 	"net"
 )
 
+type SpawnerFunction func(*FileStore, *RequestInfo, *net.UDPAddr) error
+
 type ServeSession struct {
 	udpUtils    *UDPUtils
 	fileStorage *FileStore
@@ -47,13 +49,19 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 
 	switch opCode {
 	case WRQ:
-		err := s.startWriteSession(packet, addr)
+		err := s.startSession(packet, addr, SpawnWriteSession)
 		if err != nil {
 			return false, err
 		}
 		return true, nil
 	case RRQ:
-		err := s.startReadSession(packet, addr)
+		err := s.startSession(packet, addr, SpawnReadSession)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	case ERROR:
+		err := handleError(packet)
 		if err != nil {
 			return false, err
 		}
@@ -63,20 +71,18 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 	}
 }
 
-func (s *ServeSession) startWriteSession(packet []byte, addr *net.UDPAddr) error {
-	reqInfo, err := NewRequestInfo(packet)
-	if err != nil {
-		return err
-	}
-	go SpawnWriteSession(s.fileStorage, reqInfo, addr)
-	return nil
-}
+func (s *ServeSession) startSession(
+	packet []byte,
+	addr *net.UDPAddr,
+	funcSig SpawnerFunction) error {
 
-func (s *ServeSession) startReadSession(packet []byte, addr *net.UDPAddr) error {
-	reqInfo, err := NewRequestInfo(packet)
+	reqInfo, err := createRequestInfo(packet)
 	if err != nil {
 		return err
 	}
-	go SpawnReadSession(s.fileStorage, reqInfo, addr)
-	return nil
+	chanErr := make(chan error)
+	go func() {
+		chanErr <- funcSig(s.fileStorage, reqInfo, addr)
+	}()
+	return <-chanErr
 }

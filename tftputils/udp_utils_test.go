@@ -22,13 +22,13 @@ func TestUDPReadWrite(t *testing.T) {
 		}
 	}()
 
-	readUdpUtils, err := NewUDPUtils(port, "")
+	readUDPUtils, err := NewUDPUtils(port, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer readUdpUtils.CloseConnection()
+	defer readUDPUtils.CloseConnection()
 	for {
-		readMessage, addr, err := readUdpUtils.ReadFromConn()
+		readMessage, addr, err := readUDPUtils.ReadFromConn()
 		if err != nil {
 			t.Fatal(err)
 		}

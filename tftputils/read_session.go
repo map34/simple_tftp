@@ -88,6 +88,12 @@ func (rs *ReadSession) ResolvePackets(packet []byte) (bool, error) {
 	switch opCode {
 	case ACK:
 		return rs.handleAck(packet)
+	case ERROR:
+		err := handleError(packet)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
 	default:
 		return false, fmt.Errorf("R: Opcode unknown or currently unsupported: %v", opCode)
 	}
@@ -121,6 +127,5 @@ func (rs *ReadSession) sendData() (bool, error) {
 	} else {
 		blockData = rs.file.data[prevBlock:nextBlock]
 	}
-	packet := NewDataPacket(rs.blockLoc, blockData)
-	return false, rs.udpUtils.WriteToConn(packet.packetBytes)
+	return false, sendDataPacket(rs.blockLoc, blockData, rs.udpUtils)
 }
