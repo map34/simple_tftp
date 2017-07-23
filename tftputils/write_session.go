@@ -8,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// WriteSession holds necessary info about how to receive file data
+// from the client
 type WriteSession struct {
 	udpUtils    *UDPUtils
 	fileStorage *FileStore
@@ -39,6 +41,8 @@ func NewWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDP
 	}, nil
 }
 
+// SpawnWriteSession dials up to the address provided and
+// starts sending ack packets when file data is received block by block.
 func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPAddr) error {
 	writer, err := NewWriteSession(fileS, reqInfo, remoteAddr)
 
@@ -56,11 +60,12 @@ func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.U
 		if err != nil {
 			return err
 		}
-		done, err := writer.ResolvePackets(data)
+		done, err := writer.ResolvePacket(data)
 		if err != nil {
 			return err
 		}
 		if done {
+			// Once all data are received, store it on the file stoarge.
 			err := writer.storeFile()
 			logrus.Infof("W: Done transferring data from %v to server", reqInfo.filename)
 			return err
@@ -68,6 +73,8 @@ func SpawnWriteSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.U
 	}
 }
 
+// validateReadRequest validates if we can store file in the server (file hasn't existed) in the server
+// and the mode is supported, otherwise send an error message to the client.
 func validateWriteRequest(fileS *FileStore, reqInfo *RequestInfo, udpUtils *UDPUtils) (bool, error) {
 	if fileS.DoesFileExist(reqInfo.filename) {
 		msg := fmt.Sprintf("W: File %v exists in the server", reqInfo.filename)
@@ -77,7 +84,9 @@ func validateWriteRequest(fileS *FileStore, reqInfo *RequestInfo, udpUtils *UDPU
 	return validateModeAndNotify(reqInfo.mode, udpUtils)
 }
 
-func (ws *WriteSession) ResolvePackets(packet []byte) (bool, error) {
+// ResolvePacket determines from initial request info
+// what to do (send ack packet when file data is received, or handles error)
+func (ws *WriteSession) ResolvePacket(packet []byte) (bool, error) {
 	opCode, err := getOpCode(packet)
 	if err != nil {
 		return false, err
@@ -97,6 +106,9 @@ func (ws *WriteSession) ResolvePackets(packet []byte) (bool, error) {
 	}
 }
 
+// handleData parses file data and store it on the temporary buffer
+// block by block, once a data block is less than 512, we know that
+// that is the last block of the file, returns a done flag and an error.
 func (ws *WriteSession) handleData(packet []byte) (bool, error) {
 	blockFromClient, err := getAck(packet)
 	if err != nil {
@@ -128,11 +140,16 @@ func (ws *WriteSession) handleData(packet []byte) (bool, error) {
 	return false, nil
 }
 
+// storeData stores block data from client
+// to the temporary buffer, append sto the previously
+// received blocks in the temp buffer
 func (ws *WriteSession) storeData(data []byte) {
 	newData := append(ws.tempBuf, data...)
 	ws.tempBuf = newData
 }
 
+// storeFile stores temporary buffer data
+// to the file storage,
 func (ws *WriteSession) storeFile() error {
 	newFile := NewFileObject(ws.reqInfo.filename, ws.tempBuf)
 	return ws.fileStorage.Put(newFile)

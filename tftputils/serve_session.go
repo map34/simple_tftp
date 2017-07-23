@@ -3,21 +3,28 @@ package tftputils
 import (
 	"fmt"
 	"net"
+
+	"github.com/sirupsen/logrus"
 )
 
 type SpawnerFunction func(*FileStore, *RequestInfo, *net.UDPAddr) error
 
+// ServeSession holds the udp read/write utils
+// and a file storage reference
 type ServeSession struct {
 	udpUtils    *UDPUtils
 	fileStorage *FileStore
 }
 
+// SpawnServeSession reads from socket and resolve the initial request from client
+// and spawn a server in the main goroutine
 func SpawnServeSession() error {
 	server, err := NewServeSession()
 	if err != nil {
 		return err
 	}
 	defer server.udpUtils.CloseConnection()
+
 	for {
 		data, addr, err := server.udpUtils.ReadFromConn()
 		if err != nil {
@@ -41,6 +48,8 @@ func NewServeSession() (*ServeSession, error) {
 	}, nil
 }
 
+// ResolvePacket determines from initial request info
+// what to do (spawn a write/read session or handles the error)
 func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, error) {
 	opCode, err := getOpCode(packet)
 	if err != nil {
@@ -71,6 +80,9 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 	}
 }
 
+// StartSession starts a session in a new goroutine.
+// It handles error by repoting to the console to avoid
+// affecting other goroutines.
 func (s *ServeSession) StartSession(
 	packet []byte,
 	addr *net.UDPAddr,
@@ -84,5 +96,6 @@ func (s *ServeSession) StartSession(
 	go func() {
 		chanErr <- funcSig(s.fileStorage, reqInfo, addr)
 	}()
-	return <-chanErr
+	logrus.Errorf("%v", <-chanErr)
+	return nil
 }

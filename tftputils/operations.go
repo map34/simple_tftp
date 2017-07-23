@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// RequestInfo holds the initial request info from client
+// which is filename and mode
 type RequestInfo struct {
 	filename string
 	mode     string
@@ -28,6 +30,7 @@ func sendDataPacket(block uint16, data []byte, udpUtils *UDPUtils) error {
 }
 
 // We should be able to tolerate an error coming from client
+// for now
 func handleError(packet []byte) error {
 	msg, err := getErrorMessage(packet)
 	if err != nil {
@@ -105,7 +108,7 @@ func createRequestInfo(packetBytes []byte) (*RequestInfo, error) {
 // ---------------------
 func getAck(input []byte) (uint16, error) {
 	if len(input) < 4 {
-		return 0, errors.New("Cannot get block. Data lengths mismatch")
+		return 0, errors.New("Not enough bytes to get block info")
 	}
 	block, err := bytesToUint64(input[2:4])
 	if err != nil {

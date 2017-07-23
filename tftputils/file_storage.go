@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// FileObject holds filename and data of a file
 type FileObject struct {
 	filename string
 	data     []byte
@@ -17,6 +18,8 @@ func NewFileObject(filename string, data []byte) *FileObject {
 	}
 }
 
+// FileStore holds a dictionary of fileObjects and
+// a mutex to protect from concurrent access
 type FileStore struct {
 	fileMap map[string]*FileObject
 	mutex   *sync.Mutex

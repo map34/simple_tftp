@@ -8,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// ReadSession holds necessary info about how to send
+// file data to client.
 type ReadSession struct {
 	udpUtils *UDPUtils
 	file     *FileObject
@@ -41,17 +43,22 @@ func NewReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPA
 	}, nil
 }
 
+// SpawnReadSession dials up to the address provided and
+// starts sending necessary bytes to the client to save.
 func SpawnReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UDPAddr) error {
 	reader, err := NewReadSession(fileS, reqInfo, remoteAddr)
 	if err != nil {
 		return err
 	}
 
+	// close connection at the end of session
 	defer reader.udpUtils.CloseConnection()
 
 	logrus.Infof("R: Starting a reading session for %v in %v mode",
 		reqInfo.filename, reqInfo.mode)
 
+	// send first set of data for the client
+	// to be acked
 	reader.sendData()
 
 	for {
@@ -59,7 +66,7 @@ func SpawnReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UD
 		if err != nil {
 			return err
 		}
-		done, err := reader.ResolvePackets(data)
+		done, err := reader.ResolvePacket(data)
 		if err != nil {
 			return err
 		}
@@ -70,6 +77,8 @@ func SpawnReadSession(fileS *FileStore, reqInfo *RequestInfo, remoteAddr *net.UD
 	}
 }
 
+// validateReadRequest validates if a file exists in the server
+// and the mode is supported, otherwise send an error message to the client.
 func validateReadRequest(fileS *FileStore, reqInfo *RequestInfo, udpUtils *UDPUtils) (bool, error) {
 	if !fileS.DoesFileExist(reqInfo.filename) {
 		msg := fmt.Sprintf("R: File %v does not exist in the server", reqInfo.filename)
@@ -79,7 +88,9 @@ func validateReadRequest(fileS *FileStore, reqInfo *RequestInfo, udpUtils *UDPUt
 	return validateModeAndNotify(reqInfo.mode, udpUtils)
 }
 
-func (rs *ReadSession) ResolvePackets(packet []byte) (bool, error) {
+// ResolvePacket determines from initial request info
+// what to do (send file data when ack is received, or handles error)
+func (rs *ReadSession) ResolvePacket(packet []byte) (bool, error) {
 	opCode, err := getOpCode(packet)
 	if err != nil {
 		return false, err
@@ -99,6 +110,8 @@ func (rs *ReadSession) ResolvePackets(packet []byte) (bool, error) {
 	}
 }
 
+// handleAck sends data to the client when an appropriate
+// ack packet is received, returns a done flag and an error
 func (rs *ReadSession) handleAck(packet []byte) (bool, error) {
 	blockFromClient, err := getAck(packet)
 	if err != nil {
@@ -112,6 +125,9 @@ func (rs *ReadSession) handleAck(packet []byte) (bool, error) {
 	return rs.sendData()
 }
 
+// sendData sends data to the client block by block
+// returns a done flag and an error object
+// done flag is true when there is no more data to send
 func (rs *ReadSession) sendData() (bool, error) {
 	nextBlock := rs.blockLoc * SmallestBlockSize
 	prevBlock := (rs.blockLoc - 1) * SmallestBlockSize
