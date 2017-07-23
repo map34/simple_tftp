@@ -81,7 +81,7 @@ func (s *ServeSession) ResolvePacket(packet []byte, addr *net.UDPAddr) (bool, er
 }
 
 // StartSession starts a session in a new goroutine.
-// It handles error by repoting to the console to avoid
+// It handles error by reporting to the console to avoid
 // affecting other goroutines.
 func (s *ServeSession) StartSession(
 	packet []byte,
@@ -96,6 +96,9 @@ func (s *ServeSession) StartSession(
 	go func() {
 		chanErr <- funcSig(s.fileStorage, reqInfo, addr)
 	}()
-	logrus.Errorf("%v", <-chanErr)
+	err = <-chanErr
+	if err != nil {
+		logrus.Errorf("%v", <-chanErr)
+	}
 	return nil
 }
