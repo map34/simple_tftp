@@ -34,12 +34,13 @@ func NewFileStore() *FileStore {
 
 func (fs *FileStore) Put(file *FileObject) error {
 	// Protect storage from concurrent writing
-	defer fs.mutex.Unlock()
-	fs.mutex.Lock()
-
 	if fs.DoesFileExist(file.filename) {
 		return fmt.Errorf("%v exists", file.filename)
 	}
+
+	defer fs.mutex.Unlock()
+	fs.mutex.Lock()
+
 	fs.fileMap[file.filename] = file
 	return nil
 }
@@ -48,11 +49,20 @@ func (fs *FileStore) Get(filename string) (*FileObject, error) {
 	if !fs.DoesFileExist(filename) {
 		return nil, fmt.Errorf("%v does not exist", filename)
 	}
+
+	// Protect storage from concurrent reading
+	defer fs.mutex.Unlock()
+	fs.mutex.Lock()
+
 	file := fs.fileMap[filename]
 	return file, nil
 }
 
 func (fs *FileStore) DoesFileExist(filename string) bool {
+	// Protect storage from concurrent reading
+	defer fs.mutex.Unlock()
+	fs.mutex.Lock()
+
 	_, ok := fs.fileMap[filename]
 	return ok
 }

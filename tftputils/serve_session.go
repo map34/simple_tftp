@@ -92,13 +92,12 @@ func (s *ServeSession) StartSession(
 	if err != nil {
 		return err
 	}
-	chanErr := make(chan error)
+
 	go func() {
-		chanErr <- funcSig(s.fileStorage, reqInfo, addr)
+		err := funcSig(s.fileStorage, reqInfo, addr)
+		if err != nil {
+			logrus.Errorf("%v", err)
+		}
 	}()
-	err = <-chanErr
-	if err != nil {
-		logrus.Errorf("%v", <-chanErr)
-	}
 	return nil
 }
