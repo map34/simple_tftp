@@ -1,6 +1,6 @@
 # Simple TFTP
 
-A simple in-memory TFTP server writtern in Golang. Just open up your favorite tftp client interface,
+A simple in-memory TFTP server written in Golang. Just open up your favorite tftp client interface,
 and start saving your data on the TFTP server.
 
 ## Get
