@@ -1,5 +1,7 @@
 # Simple TFTP
 
+[![Build Status](https://travis-ci.org/map34/simple_tftp.svg?branch=master)](https://travis-ci.org/map34/simple_tftp)
+
 A simple in-memory TFTP server written in Golang. Just open up your favorite tftp client interface,
 and start saving your data on the TFTP server.
 
