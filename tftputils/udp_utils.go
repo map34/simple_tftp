@@ -16,7 +16,7 @@ type UDPUtils struct {
 
 func NewUDPUtils(initAddr string, remoteAddr string) (*UDPUtils, error) {
 	if initAddr == "" {
-		initAddr = ":0"
+		initAddr = "localhost:0"
 	}
 
 	localAddr, err := net.ResolveUDPAddr("udp", initAddr)

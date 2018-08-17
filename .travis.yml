@@ -1,0 +1,15 @@
+sudo: required
+
+language: bash
+
+services:
+  - docker
+
+before_install:
+- docker build -t simple_tftp .
+
+install:
+- echo "Nothing to install"
+
+script:
+- docker run -it --rm simple_tftp bash -c "go test -timeout 1s tftputils/*"
